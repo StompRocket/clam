@@ -1,3 +1,6 @@
 port: 8080
-routes: []
+routes:
+- route: /
+  command: echo Reached /
+  content-type: text/html
 content-type: text/plain

@@ -1,7 +1,8 @@
 (ns clam.core
   (:gen-class)
   (:require [clam.server :as server]
-        [yaml.core :as yaml]))
+            [yaml.core :as yaml]
+            [clojure.java.io :as io]))
 
 (defn color
   [code]
@@ -55,8 +56,10 @@
       command: node getPost.js")
 (def default-config
   { :port 8080
-    :routes [ ]
-    :content-type "text/plain" })
+    :routes [
+    { :route "/"
+      :command "echo Reached /"
+      :content-type "text/html" }]})
 
 (defn -main
   "Print out some usage info and start the server if a config
@@ -72,17 +75,17 @@
         (println help-message))
       (= (first args) "new")
       (do
-        (if (not (.exists (clojure.java.io/as-file ".clam.yml")))
+        (if (not (.exists (io/as-file ".clam.yml")))
           (do
             (spit ".clam.yml"
               (yaml/generate-string default-config
-                :dumper-options { :flowstyle
-                          :block }))
+                :dumper-options { :flow-style
+                                  :block }))
             (ok "Created .clam.yml"))
           (error ".clam.yml already exists!")))
       :default
       (if 
-        (.exists (clojure.java.io/as-file ".clam.yml"))
+        (.exists (io/as-file ".clam.yml"))
         (server/serve-from (slurp ".clam.yml"))
         (do
           (error ".clam.yml does not exist! Create it to use clam")

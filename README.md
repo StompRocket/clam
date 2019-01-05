@@ -8,13 +8,34 @@ Download from releases page.
 
 ## Usage
 
-FIXME: explanation
+Clam is a CLI that acts as a web server, which abstracts the process of
+routing to work with any language, without the need to use a specific
+library. It uses a configuration file `.clam.yml` which provides
+information such as what port to serve on, and what commands to run at
+what routes.
+
+Here is what the most basic clam config looks like:
+
+```yaml
+
+port: 8000
+routes:
+	- path: /
+      command: echo "Routed to /"
+    - path: /user/*
+      command: python get_user.py $clam-path
+
+```
+
+Running `clam` in a directory with this file will start a web server on port
+8000, and start listening for events. 
 
     $ java -jar clam-0.1.0-standalone.jar [args]
 
 ## Options
 
 -h: help
+
 new: new .clam.yml
 
 ## License

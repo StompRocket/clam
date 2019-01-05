@@ -1,15 +1,16 @@
 (ns clam.server
   (:gen-class)
   (:require [yaml.core :as yaml]
-            [ring.adapter.jetty :refer [run-jetty]]))
+            [ring.adapter.jetty :refer [run-jetty]]
+            [clojure.java.shell :refer [sh]]))
 
 (defn match-paths
   [pat real]
   (cond
     (= pat real)
-      true
+      (println "Same!")
     (not (= (count pat) (count real)))
-      false
+      (println "Not Same")
     ;; Routes are same or is wildcard
     (or (= (first pat) (first real))
         (= (first pat) "*"))
@@ -17,15 +18,24 @@
 
 (defn match
   [pattern match]
-  (let [paths (clojure.string/split match #"/")
-        pat-paths (clojure.string/split pattern #"/")]
-    (match-paths pattern match)))
+  (do
+    (println "Starting Match with" pattern match)
+    (let [paths (clojure.string/split match #"/")
+          pat-paths (clojure.string/split pattern #"/")]
+      (println "about to match-paths with" pat-paths  paths))))
 
 (defn handle-path
   [url routes]
   (do
-    ;; Run match on each pattern
-    ))
+    (println "Handling Path with routes" (first routes))
+    (if (match (:route (first routes)) url)
+      (let [res (:out (sh "sh" "-c" (:command (first routes))))]
+        { :body res
+          :content-type (:content-type (first routes)) }
+      (if (> (count routes) 0)
+        (println "trying again")
+        { :body "Match Failed"
+          :content-type "text/plain" })))))
 
 (defn serve-from
   [config]
@@ -37,8 +47,17 @@
       (fn 
         [request]
         (do
-          (println "Request on" (:uri request))
-          { :status 200
-            :headers { "Content-Type" "text/raw" }
-            :body "Received!" }))
+          (println "Request received on" (:uri request))
+          (if (not (= (:uri request) "/favicon.ico"))
+            (do
+              (println "About to match")
+              (let [match (handle-path (:uri request) routes)]
+                (do
+                  (println "MATCH::" match)
+                  { :status 200
+                    :headers { "Content-Type" (:content-type match) }
+                    :body (:body match) })))
+            { :status 404
+              :headers { "Content-Type" "text/plain" 
+              :body "Error 404, route not found" }})))
       { :port port })))
